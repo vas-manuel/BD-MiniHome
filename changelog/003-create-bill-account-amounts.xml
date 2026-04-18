@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="
+    http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="003-create-bill-account-amounts" author="vas-manuel">
+
+    <!-- Montos por periodo y cuotas -->
+    <createTable tableName="bill_account_amounts">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+
+      <column name="household_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="bill_account_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="year" type="INT">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="month" type="INT">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="amount" type="DECIMAL(12,2)">
+        <constraints nullable="false"/>
+      </column>
+
+      <!-- NOT_CONFIRMED | CONFIRMED | PAID -->
+      <column name="status" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="created_at" type="TIMESTAMP"/>
+      <column name="updated_at" type="TIMESTAMP"/>
+    </createTable>
+
+    <addForeignKeyConstraint
+      baseTableName="bill_account_amounts"
+      baseColumnNames="household_id"
+      constraintName="fk_amounts_household"
+      referencedTableName="households"
+      referencedColumnNames="id"/>
+
+    <addForeignKeyConstraint
+      baseTableName="bill_account_amounts"
+      baseColumnNames="bill_account_id"
+      constraintName="fk_amounts_bill_account"
+      referencedTableName="bill_accounts"
+      referencedColumnNames="id"/>
+
+    <createIndex tableName="bill_account_amounts" indexName="idx_amount_account_period">
+      <column name="bill_account_id"/>
+      <column name="year"/>
+      <column name="month"/>
+    </createIndex>
+
+  </changeSet>
+
+</databaseChangeLog>
