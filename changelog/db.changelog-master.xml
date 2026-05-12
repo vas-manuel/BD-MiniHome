@@ -16,5 +16,6 @@
   <include file="changelog/008-create-refresh-tokens.xml"/>
   <include file="changelog/009-add-monthly-budget-to-households.xml"/>
   <include file="changelog/010-add-variable-product-fields.xml"/>
+  <include file="changelog/011-create-merchants.xml"/>
 
 </databaseChangeLog>

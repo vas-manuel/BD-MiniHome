@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.6.xsd">
+
+    <changeSet id="011-create-merchants-table" author="monihome">
+        <createTable tableName="merchants">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="keywords" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="category" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true"/>
+
+            <column name="createdAt" type="TIMESTAMP"/>
+            <column name="updatedAt" type="TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="merchants" indexName="idx_merchants_name">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Seed inicial empresas principales Chile -->
+    <changeSet id="011-seed-merchants" author="monihome">
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Telsur"/>
+            <column name="keywords" value="telsur,telefonica del sur"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Lider"/>
+            <column name="keywords" value="lider,walmart"/>
+            <column name="category" value="SUPERMARKET"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Cruz Verde"/>
+            <column name="keywords" value="cruz verde"/>
+            <column name="category" value="PHARMACY"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
