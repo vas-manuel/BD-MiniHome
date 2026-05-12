@@ -18,5 +18,6 @@
   <include file="changelog/010-add-variable-product-fields.xml"/>
   <include file="changelog/011-create-merchants.xml"/>
   <include file="changelog/012-seed-merchants-chile-massive.xml"/>
+  <include file="changelog/013-promote-manuel-system-admin.xml"/>
 
 </databaseChangeLog>
