@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.6.xsd">
+
+    <changeSet id="012-seed-massive-chile-merchants" author="monihome">
+
+        <!-- TELECOM -->
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Movistar"/>
+            <column name="keywords" value="movistar,telefonica"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Entel"/>
+            <column name="keywords" value="entel"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Claro"/>
+            <column name="keywords" value="claro"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="WOM"/>
+            <column name="keywords" value="wom"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <!-- ELECTRICIDAD -->
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Enel"/>
+            <column name="keywords" value="enel"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="CGE"/>
+            <column name="keywords" value="cge"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <!-- AGUA -->
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Aguas Andinas"/>
+            <column name="keywords" value="aguas andinas"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <!-- GAS -->
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Gasco"/>
+            <column name="keywords" value="gasco"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Lipigas"/>
+            <column name="keywords" value="lipigas"/>
+            <column name="category" value="SERVICE"/>
+            <column name="type" value="FIXED"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <!-- SUPERMERCADOS -->
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Jumbo"/>
+            <column name="keywords" value="jumbo,cencosud"/>
+            <column name="category" value="SUPERMARKET"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Unimarc"/>
+            <column name="keywords" value="unimarc"/>
+            <column name="category" value="SUPERMARKET"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Tottus"/>
+            <column name="keywords" value="tottus"/>
+            <column name="category" value="SUPERMARKET"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <!-- FARMACIAS -->
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Salcobrand"/>
+            <column name="keywords" value="salcobrand"/>
+            <column name="category" value="PHARMACY"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Farmacias Ahumada"/>
+            <column name="keywords" value="ahumada"/>
+            <column name="category" value="PHARMACY"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <!-- RETAIL -->
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Falabella"/>
+            <column name="keywords" value="falabella"/>
+            <column name="category" value="RETAIL"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Paris"/>
+            <column name="keywords" value="paris"/>
+            <column name="category" value="RETAIL"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="merchants">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="name" value="Ripley"/>
+            <column name="keywords" value="ripley"/>
+            <column name="category" value="RETAIL"/>
+            <column name="type" value="VARIABLE"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>
