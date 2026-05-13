@@ -19,5 +19,6 @@
   <include file="changelog/011-create-merchants.xml"/>
   <include file="changelog/012-seed-merchants-chile-massive.xml"/>
   <include file="changelog/013-promote-manuel-system-admin.xml"/>
+  <include file="changelog/014-add-receipt-url-to-bill-account-amounts.xml"/>
 
 </databaseChangeLog>
