@@ -20,5 +20,8 @@
   <include file="changelog/012-seed-merchants-chile-massive.xml"/>
   <include file="changelog/013-promote-manuel-system-admin.xml"/>
   <include file="changelog/014-add-receipt-url-to-bill-account-amounts.xml"/>
+  <include file="changelog/015-create-household-incomes.xml"/>
+  <include file="changelog/016-add-savings-goal-to-households.xml"/>
+  <include file="changelog/017-create-household-savings-movements.xml"/>
 
 </databaseChangeLog>

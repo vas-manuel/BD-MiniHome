@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="017-create-household-savings-movements" author="system">
+
+        <createTable tableName="household_savings_movements">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="household_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="year" type="INT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="month" type="INT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="description" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="amount" type="DECIMAL(14,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="household_savings_movements"
+            baseColumnNames="household_id"
+            constraintName="fk_savings_household"
+            referencedTableName="households"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+    </changeSet>
+
+</databaseChangeLog>
