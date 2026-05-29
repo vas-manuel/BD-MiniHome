@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+           http://www.liquibase.org/xml/ns/dbchangelog
+           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        ✅ CORRECCIÓN DEFINITIVA POST SCRIPT 018
+
+        1️⃣ Primero restauramos todos los registros como NO diferidos.
+        2️⃣ Luego marcamos como diferido SOLO cuando:
+            - Existe un registro en el mes inmediatamente siguiente
+            - Mismo bill_account_id
+            - Mismo amount
+        Esto identifica postergaciones reales mes a mes.
+    -->
+
+    <changeSet id="019-correct-deferred-logic" author="system-fix">
+
+        <comment>
+            Corrige marcaciones incorrectas de is_deferred generadas por el script 018.
+            Detecta postergaciones reales solo entre meses consecutivos.
+        </comment>
+
+        <!-- ✅ Paso 1: Restaurar todos los registros -->
+        <sql>
+            UPDATE bill_account_amounts
+            SET is_deferred = false
+            WHERE is_deferred = true;
+        </sql>
+
+        <!-- ✅ Paso 2: Marcar solo postergaciones reales -->
+        <sql>
+            UPDATE bill_account_amounts original
+            SET is_deferred = true,
+                status = 'CONFIRMED'
+            WHERE EXISTS (
+                SELECT 1
+                FROM bill_account_amounts next_month
+                WHERE next_month.bill_account_id = original.bill_account_id
+                  AND next_month.amount = original.amount
+                  AND (
+                        (next_month.year = original.year AND next_month.month = original.month + 1)
+                        OR
+                        (original.month = 12 AND next_month.year = original.year + 1 AND next_month.month = 1)
+                      )
+            );
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>
