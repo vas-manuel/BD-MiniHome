@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+           http://www.liquibase.org/xml/ns/dbchangelog
+           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <!--
+        ✅ FIX HISTÓRICO:
+        Detecta registros duplicados por:
+            - bill_account_id
+            - amount
+        Mantiene el registro más reciente como válido
+        Marca los anteriores como:
+            is_deferred = true
+            status = 'CONFIRMED'
+    -->
+
+    <changeSet id="018-fix-duplicated-deferred-amounts" author="system-fix">
+
+        <comment>
+            Corrige registros duplicados generados por postergaciones incorrectas.
+            Mantiene el registro más reciente y marca los anteriores como históricos.
+        </comment>
+
+        <sql>
+            WITH ranked_amounts AS (
+                SELECT
+                    id,
+                    bill_account_id,
+                    amount,
+                    year,
+                    month,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY bill_account_id, amount
+                        ORDER BY year DESC, month DESC
+                    ) AS rn
+                FROM bill_account_amounts
+            )
+            UPDATE bill_account_amounts baa
+            SET
+                is_deferred = true,
+                status = 'CONFIRMED'
+            FROM ranked_amounts ra
+            WHERE baa.id = ra.id
+              AND ra.rn > 1;
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>
