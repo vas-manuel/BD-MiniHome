@@ -8,15 +8,7 @@
 
     <!--
         NORMALIZACION DEFINITIVA POST REFACTORIZACION
-
-        Objetivo:
-        - Eliminar duplicados por (bill_account_id, year, month, household_id)
-        - Consolidar montos sumandolos en un solo registro
-        - Mantener coherencia para el nuevo modelo de postergacion
-
-        NO elimina informacion economica.
-        NO altera estados.
-        Solo consolida registros duplicados.
+        Consolida registros duplicados sin perder informacion.
     -->
 
     <changeSet id="021-deduplicate-bill-account-amounts" author="system-fix">
@@ -25,11 +17,11 @@
             Consolida registros duplicados sumando montos y eliminando excedentes.
         </comment>
 
-        <!-- Paso 1: Crear tabla temporal con consolidacion -->
-        <sql>
+        <!-- Paso 1 -->
+        <sql><![CDATA[
             CREATE TEMP TABLE tmp_consolidated AS
             SELECT
-                MIN(id) as keep_id,
+                (MIN(id::text))::uuid as keep_id,
                 bill_account_id,
                 household_id,
                 year,
@@ -38,18 +30,18 @@
             FROM bill_account_amounts
             GROUP BY bill_account_id, household_id, year, month
             HAVING COUNT(*) > 1;
-        </sql>
+        ]]></sql>
 
-        <!-- Paso 2: Actualizar registro que se conserva -->
-        <sql>
+        <!-- Paso 2 -->
+        <sql><![CDATA[
             UPDATE bill_account_amounts b
             SET amount = t.total_amount
             FROM tmp_consolidated t
             WHERE b.id = t.keep_id;
-        </sql>
+        ]]></sql>
 
-        <!-- Paso 3: Eliminar duplicados restantes -->
-        <sql>
+        <!-- Paso 3 -->
+        <sql><![CDATA[
             DELETE FROM bill_account_amounts b
             USING tmp_consolidated t
             WHERE b.bill_account_id = t.bill_account_id
@@ -57,12 +49,12 @@
               AND b.year = t.year
               AND b.month = t.month
               AND b.id <> t.keep_id;
-        </sql>
+        ]]></sql>
 
-        <!-- Paso 4: Limpiar tabla temporal -->
-        <sql>
+        <!-- Paso 4 -->
+        <sql><![CDATA[
             DROP TABLE tmp_consolidated;
-        </sql>
+        ]]></sql>
 
     </changeSet>
 

@@ -7,32 +7,22 @@
            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <!--
-        ✅ CORRECCIÓN DE CONSISTENCIA POSTERGACIONES HISTÓRICAS
-
-        Problemas detectados:
-        1) Registros postergados con status incorrecto (NOT_CONFIRMED).
-        2) Mes destino queda como pendiente aunque proviene de una postergación confirmada.
-
-        Este script:
-        - Fuerza status = CONFIRMED donde is_deferred = true.
-        - Ajusta el mes destino si proviene de una postergación confirmada.
-        - NO elimina datos.
-        - NO altera montos.
+        CORRECCION DE CONSISTENCIA POSTERGACIONES HISTORICAS
+        Ajusta estados sin alterar montos ni eliminar datos.
     -->
 
     <changeSet id="022-fix-deferred-status-consistency" author="system-fix">
 
-        <!-- 1️⃣ Todo registro marcado como diferido debe estar CONFIRMED -->
-        <sql>
+        <!-- Paso 1 -->
+        <sql><![CDATA[
             UPDATE bill_account_amounts
             SET status = 'CONFIRMED'
             WHERE is_deferred = true
               AND status <> 'CONFIRMED';
-        </sql>
+        ]]></sql>
 
-        <!-- 2️⃣ Si existe un mes anterior diferido,
-               el mes actual no puede quedar NOT_CONFIRMED -->
-        <sql>
+        <!-- Paso 2 -->
+        <sql><![CDATA[
             UPDATE bill_account_amounts current_month
             SET status = 'CONFIRMED'
             WHERE status = 'NOT_CONFIRMED'
@@ -51,7 +41,7 @@
                          AND current_month.month = 1)
                       )
               );
-        </sql>
+        ]]></sql>
 
     </changeSet>
 
