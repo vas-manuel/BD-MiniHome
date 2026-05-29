@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+           http://www.liquibase.org/xml/ns/dbchangelog
+           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        ✅ NORMALIZACIÓN DEFINITIVA POST REFACTORIZACIÓN
+
+        Objetivo:
+        - Eliminar duplicados por (bill_account_id, year, month, household_id)
+        - Consolidar montos sumándolos en un solo registro
+        - Mantener coherencia para el nuevo modelo de postergación
+
+        NO elimina información económica.
+        NO altera estados.
+        Solo consolida registros duplicados.
+    -->
+
+    <changeSet id="021-deduplicate-bill-account-amounts" author="system-fix">
+
+        <comment>
+            Consolida registros duplicados sumando montos y eliminando excedentes.
+        </comment>
+
+        <!-- 1️⃣ Crear tabla temporal con consolidación -->
+        <sql>
+            CREATE TEMP TABLE tmp_consolidated AS
+            SELECT
+                MIN(id) as keep_id,
+                bill_account_id,
+                household_id,
+                year,
+                month,
+                SUM(amount) as total_amount
+            FROM bill_account_amounts
+            GROUP BY bill_account_id, household_id, year, month
+            HAVING COUNT(*) > 1;
+        </sql>
+
+        <!-- 2️⃣ Actualizar registro que se conserva -->
+        <sql>
+            UPDATE bill_account_amounts b
+            SET amount = t.total_amount
+            FROM tmp_consolidated t
+            WHERE b.id = t.keep_id;
+        </sql>
+
+        <!-- 3️⃣ Eliminar duplicados restantes -->
+        <sql>
+            DELETE FROM bill_account_amounts b
+            USING tmp_consolidated t
+            WHERE b.bill_account_id = t.bill_account_id
+              AND b.household_id = t.household_id
+              AND b.year = t.year
+              AND b.month = t.month
+              AND b.id <> t.keep_id;
+        </sql>
+
+        <!-- 4️⃣ Limpiar tabla temporal -->
+        <sql>
+            DROP TABLE tmp_consolidated;
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>
