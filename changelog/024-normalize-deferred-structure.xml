@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+           http://www.liquibase.org/xml/ns/dbchangelog
+           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        NORMALIZACION ESTRUCTURAL DE POSTERGACIONES HISTORICAS
+
+        Objetivo:
+        - Para registros con is_deferred = true y base_amount > 0
+        - Mover base_amount al mes siguiente como carried_amount
+        - Dejar base_amount = 0 en el mes original
+        - Recalcular amount = base_amount + carried_amount
+
+        No elimina datos.
+        No altera estados.
+        Solo corrige estructura inconsistente.
+    -->
+
+    <changeSet id="024-normalize-deferred-structure" author="system-refactor">
+
+        <sql><![CDATA[
+
+            CREATE TEMP TABLE tmp_deferred_fix AS
+            SELECT
+                id,
+                bill_account_id,
+                household_id,
+                year,
+                month,
+                base_amount
+            FROM bill_account_amounts
+            WHERE is_deferred = true
+              AND base_amount > 0;
+
+            INSERT INTO bill_account_amounts (
+                id,
+                bill_account_id,
+                household_id,
+                year,
+                month,
+                base_amount,
+                carried_amount,
+                amount,
+                status,
+                is_deferred
+            )
+            SELECT
+                gen_random_uuid(),
+                t.bill_account_id,
+                t.household_id,
+                CASE WHEN t.month = 12 THEN t.year + 1 ELSE t.year END,
+                CASE WHEN t.month = 12 THEN 1 ELSE t.month + 1 END,
+                0,
+                t.base_amount,
+                t.base_amount,
+                'NOT_CONFIRMED',
+                false
+            FROM tmp_deferred_fix t
+            ON CONFLICT DO NOTHING;
+
+            UPDATE bill_account_amounts target
+            SET carried_amount = COALESCE(target.carried_amount, 0) + t.base_amount,
+                amount = COALESCE(target.base_amount, 0)
+                         + COALESCE(target.carried_amount, 0)
+                         + t.base_amount
+            FROM tmp_deferred_fix t
+            WHERE target.bill_account_id = t.bill_account_id
+              AND target.household_id = t.household_id
+              AND target.year = CASE WHEN t.month = 12 THEN t.year + 1 ELSE t.year END
+              AND target.month = CASE WHEN t.month = 12 THEN 1 ELSE t.month + 1 END;
+
+            UPDATE bill_account_amounts b
+            SET base_amount = 0,
+                amount = COALESCE(carried_amount, 0)
+            FROM tmp_deferred_fix t
+            WHERE b.id = t.id;
+
+            DROP TABLE tmp_deferred_fix;
+
+        ]]></sql>
+
+    </changeSet>
+
+</databaseChangeLog>
