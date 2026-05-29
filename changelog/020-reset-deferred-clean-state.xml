@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+           http://www.liquibase.org/xml/ns/dbchangelog
+           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        ✅ RESET LIMPIO DEFINITIVO
+
+        Deja la base en estado consistente eliminando TODAS las marcas
+        de postergación automática anteriores.
+
+        - is_deferred = false para todos
+        - NO modifica status
+        - NO elimina registros
+        - NO recalcula nada
+
+        Desde aquí en adelante, las postergaciones se manejarán
+        únicamente desde la lógica del backend.
+    -->
+
+    <changeSet id="020-reset-deferred-clean-state" author="system-fix">
+
+        <comment>
+            Limpia completamente la columna is_deferred para dejar
+            la base en estado consistente.
+        </comment>
+
+        <sql>
+            UPDATE bill_account_amounts
+            SET is_deferred = false;
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

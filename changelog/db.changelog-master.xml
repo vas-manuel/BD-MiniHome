@@ -25,5 +25,6 @@
   <include file="changelog/017-create-household-savings-movements.xml"/>
   <include file="changelog/018-fix-duplicated-deferred-amounts.xml"/>
   <include file="changelog/019-correct-deferred-logic.xml"/>
+  <include file="changelog/020-reset-deferred-clean-state.xml"/>
 
 </databaseChangeLog>
