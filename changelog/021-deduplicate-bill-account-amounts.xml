@@ -7,14 +7,14 @@
            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <!--
-        ✅ NORMALIZACIÓN DEFINITIVA POST REFACTORIZACIÓN
+        NORMALIZACION DEFINITIVA POST REFACTORIZACION
 
         Objetivo:
         - Eliminar duplicados por (bill_account_id, year, month, household_id)
-        - Consolidar montos sumándolos en un solo registro
-        - Mantener coherencia para el nuevo modelo de postergación
+        - Consolidar montos sumandolos en un solo registro
+        - Mantener coherencia para el nuevo modelo de postergacion
 
-        NO elimina información económica.
+        NO elimina informacion economica.
         NO altera estados.
         Solo consolida registros duplicados.
     -->
@@ -25,7 +25,7 @@
             Consolida registros duplicados sumando montos y eliminando excedentes.
         </comment>
 
-        <!-- 1️⃣ Crear tabla temporal con consolidación -->
+        <!-- Paso 1: Crear tabla temporal con consolidacion -->
         <sql>
             CREATE TEMP TABLE tmp_consolidated AS
             SELECT
@@ -40,7 +40,7 @@
             HAVING COUNT(*) > 1;
         </sql>
 
-        <!-- 2️⃣ Actualizar registro que se conserva -->
+        <!-- Paso 2: Actualizar registro que se conserva -->
         <sql>
             UPDATE bill_account_amounts b
             SET amount = t.total_amount
@@ -48,7 +48,7 @@
             WHERE b.id = t.keep_id;
         </sql>
 
-        <!-- 3️⃣ Eliminar duplicados restantes -->
+        <!-- Paso 3: Eliminar duplicados restantes -->
         <sql>
             DELETE FROM bill_account_amounts b
             USING tmp_consolidated t
@@ -59,7 +59,7 @@
               AND b.id <> t.keep_id;
         </sql>
 
-        <!-- 4️⃣ Limpiar tabla temporal -->
+        <!-- Paso 4: Limpiar tabla temporal -->
         <sql>
             DROP TABLE tmp_consolidated;
         </sql>
