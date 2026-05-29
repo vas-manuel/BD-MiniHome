@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+           http://www.liquibase.org/xml/ns/dbchangelog
+           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        ✅ MIGRACIÓN ESTRUCTURAL DEFINITIVA
+
+        Nuevo modelo profesional de postergación:
+
+        base_amount     → Monto original del mes
+        carried_amount  → Monto arrastrado desde meses anteriores
+
+        amount = base_amount + carried_amount
+
+        Objetivo:
+        - Separar deuda base de deuda arrastrada
+        - Permitir múltiples postergaciones limpias
+        - Permitir pago parcial lógico
+        - Eliminar ambigüedad de isDeferred
+    -->
+
+    <changeSet id="023-add-base-and-carried-amount" author="system-refactor">
+
+        <!-- 1️⃣ Agregar columnas -->
+        <addColumn tableName="bill_account_amounts">
+            <column name="base_amount" type="NUMERIC(15,2)" defaultValueNumeric="0"/>
+            <column name="carried_amount" type="NUMERIC(15,2)" defaultValueNumeric="0"/>
+        </addColumn>
+
+        <!-- 2️⃣ Inicializar base_amount con amount existente -->
+        <sql>
+            UPDATE bill_account_amounts
+            SET base_amount = amount,
+                carried_amount = 0;
+        </sql>
+
+        <!-- 3️⃣ Hacer base_amount NOT NULL -->
+        <addNotNullConstraint 
+            tableName="bill_account_amounts"
+            columnName="base_amount"
+            columnDataType="NUMERIC(15,2)"/>
+
+    </changeSet>
+
+</databaseChangeLog>
