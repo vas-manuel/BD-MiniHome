@@ -27,5 +27,6 @@
   <include file="changelog/019-correct-deferred-logic.xml"/>
   <include file="changelog/020-reset-deferred-clean-state.xml"/>
   <include file="changelog/021-deduplicate-bill-account-amounts.xml"/>
+  <include file="changelog/022-fix-deferred-status-consistency.xml"/>
 
 </databaseChangeLog>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+           http://www.liquibase.org/xml/ns/dbchangelog
+           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        ✅ CORRECCIÓN DE CONSISTENCIA POSTERGACIONES HISTÓRICAS
+
+        Problemas detectados:
+        1) Registros postergados con status incorrecto (NOT_CONFIRMED).
+        2) Mes destino queda como pendiente aunque proviene de una postergación confirmada.
+
+        Este script:
+        - Fuerza status = CONFIRMED donde is_deferred = true.
+        - Ajusta el mes destino si proviene de una postergación confirmada.
+        - NO elimina datos.
+        - NO altera montos.
+    -->
+
+    <changeSet id="022-fix-deferred-status-consistency" author="system-fix">
+
+        <!-- 1️⃣ Todo registro marcado como diferido debe estar CONFIRMED -->
+        <sql>
+            UPDATE bill_account_amounts
+            SET status = 'CONFIRMED'
+            WHERE is_deferred = true
+              AND status <> 'CONFIRMED';
+        </sql>
+
+        <!-- 2️⃣ Si existe un mes anterior diferido,
+               el mes actual no puede quedar NOT_CONFIRMED -->
+        <sql>
+            UPDATE bill_account_amounts current_month
+            SET status = 'CONFIRMED'
+            WHERE status = 'NOT_CONFIRMED'
+              AND EXISTS (
+                SELECT 1
+                FROM bill_account_amounts previous_month
+                WHERE previous_month.bill_account_id = current_month.bill_account_id
+                  AND previous_month.household_id = current_month.household_id
+                  AND previous_month.is_deferred = true
+                  AND (
+                        (previous_month.year = current_month.year
+                         AND previous_month.month = current_month.month - 1)
+                        OR
+                        (previous_month.month = 12
+                         AND previous_month.year = current_month.year - 1
+                         AND current_month.month = 1)
+                      )
+              );
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>
