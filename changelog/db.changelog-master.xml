@@ -30,5 +30,6 @@
   <include file="changelog/022-fix-deferred-status-consistency.xml"/>
     <include file="changelog/023-add-base-and-carried-amount.xml"/>
     <include file="changelog/024-normalize-deferred-structure.xml"/>
+  <include file="changelog/025-fix-invalid-months-bill-account-amounts.xml"/>
 
 </databaseChangeLog>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="
+    http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <!--
+    FIX: Normaliza registros históricos mal creados con month > 12
+    Causa: createBillAccountAmount guardaba month = month + i sin ajustar year.
+    Reglas:
+      - month debe quedar entre 1..12
+      - year se incrementa según los meses que "sobran"
+    Fórmula (PostgreSQL):
+      y' = year + floor((month - 1) / 12)
+      m' = ((month - 1) % 12) + 1
+
+    Importante:
+      - Este changeset es idempotente porque solo actualiza filas con month > 12
+      - No toca month <= 12
+  -->
+
+  <changeSet id="025-fix-invalid-months-bill-account-amounts" author="vas-manuel">
+    <comment>Normaliza bill_account_amounts con month &gt; 12, corrigiendo year/month</comment>
+
+    <sql dbms="postgresql" splitStatements="false" stripComments="true">
+      UPDATE bill_account_amounts
+      SET
+        year = year + ((month - 1) / 12),
+        month = ((month - 1) % 12) + 1
+      WHERE month &gt; 12;
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>
