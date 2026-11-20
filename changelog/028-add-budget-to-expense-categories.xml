@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Consumo: presupuesto mensual opcional por categoría de gasto -->
+    <changeSet id="028-add-budget-to-expense-categories" author="vas-manuel">
+        <addColumn tableName="expense_categories">
+            <column name="monthly_budget" type="DECIMAL(12,2)"/>
+        </addColumn>
+        <rollback>
+            <dropColumn tableName="expense_categories" columnName="monthly_budget"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -33,5 +33,6 @@
   <include file="changelog/025-fix-invalid-months-bill-account-amounts.xml"/>
   <include file="changelog/026-create-receipts-and-identifiers.xml"/>
   <include file="changelog/027-create-purchases.xml"/>
+  <include file="changelog/028-add-budget-to-expense-categories.xml"/>
 
 </databaseChangeLog>
