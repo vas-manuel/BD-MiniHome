@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+      Carga de boletas con autocompletado (specs/001-carga-boletas-autocompletado/data-model.md)
+      - receipts: boleta guardada como respaldo de un monto (una por monto)
+      - bill_account_identifiers: identificadores aprendidos para proponer la cuenta
+      - bill_account_amounts.due_date: vencimiento propio del monto (si es nulo se usa due_day)
+    -->
+
+    <changeSet id="026-create-receipts" author="vas-manuel">
+        <comment>Boletas guardadas, privadas por hogar</comment>
+
+        <createTable tableName="receipts">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bill_account_amount_id" type="UUID">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uq_receipts_amount"/>
+            </column>
+            <column name="storage_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mime_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="size_bytes" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sha256" type="CHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="receipts" baseColumnNames="household_id"
+            constraintName="fk_receipts_household"
+            referencedTableName="households" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="receipts" baseColumnNames="bill_account_amount_id"
+            constraintName="fk_receipts_amount"
+            referencedTableName="bill_account_amounts" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="receipts" baseColumnNames="created_by"
+            constraintName="fk_receipts_user"
+            referencedTableName="users" referencedColumnNames="id"/>
+
+        <createIndex tableName="receipts" indexName="idx_receipts_household_sha256">
+            <column name="household_id"/>
+            <column name="sha256"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="receipts"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="026-create-bill-account-identifiers" author="vas-manuel">
+        <comment>Identificadores aprendidos de boletas (N° de cliente, RUT emisor)</comment>
+
+        <createTable tableName="bill_account_identifiers">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bill_account_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="kind" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_used_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="bill_account_identifiers" baseColumnNames="household_id"
+            constraintName="fk_identifiers_household"
+            referencedTableName="households" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="bill_account_identifiers" baseColumnNames="bill_account_id"
+            constraintName="fk_identifiers_account"
+            referencedTableName="bill_accounts" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <sql dbms="postgresql">
+            ALTER TABLE bill_account_identifiers
+              ADD CONSTRAINT ck_identifiers_kind CHECK (kind IN ('CUSTOMER_NUMBER', 'ISSUER_RUT'));
+            -- Un número de cliente apunta a una sola cuenta del hogar
+            CREATE UNIQUE INDEX uq_identifiers_customer_number
+              ON bill_account_identifiers (household_id, value)
+              WHERE kind = 'CUSTOMER_NUMBER';
+            -- Un RUT emisor puede apuntar a varias cuentas (dos líneas del mismo proveedor)
+            CREATE UNIQUE INDEX uq_identifiers_issuer_account
+              ON bill_account_identifiers (household_id, value, bill_account_id)
+              WHERE kind = 'ISSUER_RUT';
+        </sql>
+
+        <rollback>
+            <dropTable tableName="bill_account_identifiers"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="026-add-due-date-to-bill-account-amounts" author="vas-manuel">
+        <comment>Vencimiento propio del monto (editable desde la boleta)</comment>
+
+        <addColumn tableName="bill_account_amounts">
+            <column name="due_date" type="DATE"/>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="bill_account_amounts" columnName="due_date"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
