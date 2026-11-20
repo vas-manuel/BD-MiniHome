@@ -32,5 +32,6 @@
     <include file="changelog/024-normalize-deferred-structure.xml"/>
   <include file="changelog/025-fix-invalid-months-bill-account-amounts.xml"/>
   <include file="changelog/026-create-receipts-and-identifiers.xml"/>
+  <include file="changelog/027-create-purchases.xml"/>
 
 </databaseChangeLog>

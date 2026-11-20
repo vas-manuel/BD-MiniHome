@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+      Consumo (versión de prueba, rama 002-consumo-boletas-productos)
+      - expense_categories: categorías de gasto del hogar (Alimentos, Farmacia, Vehículo...)
+      - purchases: una compra (con o sin boleta)
+      - purchase_items: líneas de la compra, cada una con su categoría, cantidad y unidad
+      - product_aliases: lo que el hogar enseñó ("AZUC IANSA 1KG" → Azúcar, Alimentos, kg)
+    -->
+
+    <changeSet id="027-create-expense-categories" author="vas-manuel">
+        <comment>Categorías de gasto por hogar</comment>
+
+        <createTable tableName="expense_categories">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(30)"/>
+            <column name="name" type="VARCHAR(80)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT" defaultValueNumeric="100">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="expense_categories" baseColumnNames="household_id"
+            constraintName="fk_expense_categories_household"
+            referencedTableName="households" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addUniqueConstraint tableName="expense_categories" columnNames="household_id, name"
+            constraintName="uq_expense_categories_household_name"/>
+
+        <rollback>
+            <dropTable tableName="expense_categories"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="027-create-purchases" author="vas-manuel">
+        <comment>Compras del hogar (gastos de consumo)</comment>
+
+        <createTable tableName="purchases">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="merchant_name" type="VARCHAR(150)"/>
+            <column name="purchase_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total" type="DECIMAL(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payment_method" type="VARCHAR(30)"/>
+            <!-- MANUAL | RECEIPT_AI | RECEIPT_OCR -->
+            <column name="source" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="storage_key" type="VARCHAR(255)"/>
+            <column name="mime_type" type="VARCHAR(50)"/>
+            <column name="sha256" type="CHAR(64)"/>
+            <column name="created_by" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="purchases" baseColumnNames="household_id"
+            constraintName="fk_purchases_household"
+            referencedTableName="households" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="purchases" baseColumnNames="created_by"
+            constraintName="fk_purchases_user"
+            referencedTableName="users" referencedColumnNames="id"/>
+
+        <createIndex tableName="purchases" indexName="idx_purchases_household_date">
+            <column name="household_id"/>
+            <column name="purchase_date"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="purchases"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="027-create-purchase-items" author="vas-manuel">
+        <comment>Líneas de cada compra</comment>
+
+        <createTable tableName="purchase_items">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="purchase_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Texto tal como venía en la boleta -->
+            <column name="description" type="VARCHAR(200)"/>
+            <!-- Nombre normalizado del producto ("Azúcar") -->
+            <column name="product_name" type="VARCHAR(120)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="DECIMAL(12,3)" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <!-- un | kg | g | L | ml -->
+            <column name="unit" type="VARCHAR(10)" defaultValue="un">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unit_price" type="DECIMAL(12,2)"/>
+            <column name="discount" type="DECIMAL(12,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="line_total" type="DECIMAL(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="purchase_items" baseColumnNames="purchase_id"
+            constraintName="fk_purchase_items_purchase"
+            referencedTableName="purchases" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="purchase_items" baseColumnNames="household_id"
+            constraintName="fk_purchase_items_household"
+            referencedTableName="households" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="purchase_items" baseColumnNames="category_id"
+            constraintName="fk_purchase_items_category"
+            referencedTableName="expense_categories" referencedColumnNames="id"/>
+
+        <createIndex tableName="purchase_items" indexName="idx_purchase_items_purchase">
+            <column name="purchase_id"/>
+        </createIndex>
+
+        <createIndex tableName="purchase_items" indexName="idx_purchase_items_household_product">
+            <column name="household_id"/>
+            <column name="product_name"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="purchase_items"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="027-create-product-aliases" author="vas-manuel">
+        <comment>Correcciones aprendidas: texto de boleta → producto y categoría</comment>
+
+        <createTable tableName="product_aliases">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Texto de la boleta normalizado (mayúsculas, sin tildes ni espacios dobles) -->
+            <column name="raw_key" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_name" type="VARCHAR(120)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unit" type="VARCHAR(10)"/>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="product_aliases" baseColumnNames="household_id"
+            constraintName="fk_product_aliases_household"
+            referencedTableName="households" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="product_aliases" baseColumnNames="category_id"
+            constraintName="fk_product_aliases_category"
+            referencedTableName="expense_categories" referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addUniqueConstraint tableName="product_aliases" columnNames="household_id, raw_key"
+            constraintName="uq_product_aliases_household_raw"/>
+
+        <rollback>
+            <dropTable tableName="product_aliases"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
