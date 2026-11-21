@@ -34,5 +34,7 @@
   <include file="changelog/026-create-receipts-and-identifiers.xml"/>
   <include file="changelog/027-create-purchases.xml"/>
   <include file="changelog/028-add-budget-to-expense-categories.xml"/>
+  <include file="changelog/029-plans-limits-and-ai-usage.xml"/>
+  <include file="changelog/030-create-subscriptions-and-payments.xml"/>
 
 </databaseChangeLog>

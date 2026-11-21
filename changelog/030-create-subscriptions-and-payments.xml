@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+      Pago online de planes (specs/004-planes-y-pagos, paso 4).
+      El estado de verdad vive en el proveedor (Flow): estas tablas guardan el vínculo y la última
+      sincronización. Los avisos se registran tal cual llegan para auditar y conocer su formato.
+    -->
+
+    <!-- Cliente del hogar en el proveedor (uno por hogar y proveedor) -->
+    <changeSet id="030-1-create-payment-customers" author="vas-manuel">
+        <createTable tableName="payment_customers">
+            <column name="id" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_payment_customers_household" references="households(id)" deleteCascade="true"/>
+            </column>
+            <column name="provider" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="provider_customer_id" type="VARCHAR(100)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="payment_customers" columnNames="household_id, provider" constraintName="uq_payment_customers_household_provider"/>
+        <addUniqueConstraint tableName="payment_customers" columnNames="provider, provider_customer_id" constraintName="uq_payment_customers_provider_customer"/>
+    </changeSet>
+
+    <!-- Intento de compra: se crea al iniciar el pago y se cierra al volver del registro de tarjeta -->
+    <changeSet id="030-2-create-payment-checkouts" author="vas-manuel">
+        <createTable tableName="payment_checkouts">
+            <column name="id" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_payment_checkouts_household" references="households(id)" deleteCascade="true"/>
+            </column>
+            <column name="user_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="provider" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="plan_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="billing_period" type="VARCHAR(10)"><constraints nullable="false"/></column>
+            <column name="provider_token" type="VARCHAR(200)"><constraints nullable="false" unique="true" uniqueConstraintName="uq_payment_checkouts_token"/></column>
+            <!-- PENDING | PROCESSING | COMPLETED | FAILED -->
+            <column name="status" type="VARCHAR(20)" defaultValue="PENDING"><constraints nullable="false"/></column>
+            <column name="error" type="VARCHAR(500)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="completed_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="030-3-create-subscriptions" author="vas-manuel">
+        <createTable tableName="subscriptions">
+            <column name="id" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_subscriptions_household" references="households(id)" deleteCascade="true"/>
+            </column>
+            <column name="provider" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="provider_subscription_id" type="VARCHAR(100)"><constraints nullable="false"/></column>
+            <column name="provider_plan_id" type="VARCHAR(100)"><constraints nullable="false"/></column>
+            <column name="plan_id" type="UUID"><constraints nullable="false" foreignKeyName="fk_subscriptions_plan" references="plans(id)"/></column>
+            <column name="billing_period" type="VARCHAR(10)"><constraints nullable="false"/></column>
+            <!-- PENDING (sin primer pago) | ACTIVE | PAST_DUE | CANCELED -->
+            <column name="status" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="current_period_end" type="TIMESTAMP"/>
+            <column name="cancel_at_period_end" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="last_synced_at" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="subscriptions" columnNames="provider, provider_subscription_id" constraintName="uq_subscriptions_provider_id"/>
+        <createIndex tableName="subscriptions" indexName="idx_subscriptions_household">
+            <column name="household_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Cobros (facturas del proveedor). Base para ingresos y boleta electrónica (paso 6). -->
+    <changeSet id="030-4-create-payments" author="vas-manuel">
+        <createTable tableName="payments">
+            <column name="id" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_payments_household" references="households(id)" deleteCascade="true"/>
+            </column>
+            <column name="subscription_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_payments_subscription" references="subscriptions(id)" deleteCascade="true"/>
+            </column>
+            <column name="provider" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="provider_invoice_id" type="VARCHAR(100)"><constraints nullable="false"/></column>
+            <column name="amount" type="DECIMAL(12,2)"><constraints nullable="false"/></column>
+            <column name="currency" type="VARCHAR(10)" defaultValue="CLP"><constraints nullable="false"/></column>
+            <!-- PENDING | PAID | VOID -->
+            <column name="status" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="period_start" type="TIMESTAMP"/>
+            <column name="period_end" type="TIMESTAMP"/>
+            <column name="paid_at" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="payments" columnNames="provider, provider_invoice_id" constraintName="uq_payments_provider_invoice"/>
+    </changeSet>
+
+    <!-- Avisos recibidos del proveedor, sin interpretar -->
+    <changeSet id="030-5-create-payment-events" author="vas-manuel">
+        <createTable tableName="payment_events">
+            <column name="id" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="provider" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="kind" type="VARCHAR(40)"><constraints nullable="false"/></column>
+            <column name="payload" type="JSONB"><constraints nullable="false"/></column>
+            <column name="processed_at" type="TIMESTAMP"/>
+            <column name="error" type="VARCHAR(500)"/>
+            <column name="received_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+      Planes y pagos (specs/004-planes-y-pagos):
+      - Límites en NULL = sin límite.
+      - Cupo mensual de lecturas con IA y precio anual.
+      - Planes GRATIS / HOGAR / FAMILIA en CLP (IVA incluido), reutilizando los ids sembrados en 006.
+      - Registro de uso de IA (costo real por lectura y conteo del cupo).
+      - Los hogares existentes quedan en prueba del plan Hogar por 60 días.
+    -->
+
+    <changeSet id="029-1-plans-nullable-limits" author="vas-manuel">
+        <dropNotNullConstraint tableName="plans" columnName="max_users" columnDataType="INT"/>
+        <dropNotNullConstraint tableName="plans" columnName="max_bill_accounts" columnDataType="INT"/>
+        <dropNotNullConstraint tableName="plans" columnName="max_history_months" columnDataType="INT"/>
+        <addColumn tableName="plans">
+            <column name="max_ai_reads_monthly" type="INT"/>
+            <column name="price_yearly" type="DECIMAL(10,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <rollback>
+            <dropColumn tableName="plans" columnName="price_yearly"/>
+            <dropColumn tableName="plans" columnName="max_ai_reads_monthly"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="029-2-update-plan-catalog" author="vas-manuel">
+        <update tableName="plans">
+            <column name="name" value="GRATIS"/>
+            <column name="max_users" valueNumeric="2"/>
+            <column name="max_bill_accounts" valueNumeric="8"/>
+            <column name="max_history_months" valueNumeric="6"/>
+            <column name="max_ai_reads_monthly" valueNumeric="3"/>
+            <column name="price_monthly" valueNumeric="0"/>
+            <column name="price_yearly" valueNumeric="0"/>
+            <where>id = '11111111-1111-1111-1111-111111111111'</where>
+        </update>
+        <update tableName="plans">
+            <column name="name" value="HOGAR"/>
+            <column name="max_users" valueNumeric="5"/>
+            <column name="max_bill_accounts" valueComputed="NULL"/>
+            <column name="max_history_months" valueNumeric="36"/>
+            <column name="max_ai_reads_monthly" valueNumeric="20"/>
+            <column name="price_monthly" valueNumeric="2990"/>
+            <column name="price_yearly" valueNumeric="29900"/>
+            <where>id = '22222222-2222-2222-2222-222222222222'</where>
+        </update>
+        <update tableName="plans">
+            <column name="name" value="FAMILIA"/>
+            <column name="max_users" valueNumeric="10"/>
+            <column name="max_bill_accounts" valueComputed="NULL"/>
+            <column name="max_history_months" valueComputed="NULL"/>
+            <column name="max_ai_reads_monthly" valueNumeric="50"/>
+            <column name="price_monthly" valueNumeric="4990"/>
+            <column name="price_yearly" valueNumeric="49900"/>
+            <where>id = '33333333-3333-3333-3333-333333333333'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="029-3-create-ai-usage" author="vas-manuel">
+        <createTable tableName="ai_usage">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_ai_usage_household" references="households(id)" deleteCascade="true"/>
+            </column>
+            <column name="user_id" type="UUID"/>
+            <column name="feature" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="model" type="VARCHAR(80)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="input_tokens" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="output_tokens" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cache_read_tokens" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cache_creation_tokens" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cost_usd" type="DECIMAL(10,6)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="succeeded" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="ai_usage" indexName="idx_ai_usage_household_created">
+            <column name="household_id"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- El modelo HouseholdPlanHistory existía sin tabla -->
+    <changeSet id="029-5-create-household-plan-history" author="vas-manuel">
+        <createTable tableName="household_plan_history">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_plan_history_household" references="households(id)" deleteCascade="true"/>
+            </column>
+            <column name="old_plan_id" type="UUID"/>
+            <column name="new_plan_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="changed_by" type="UUID"/>
+            <column name="changed_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="household_plan_history" indexName="idx_plan_history_household">
+            <column name="household_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Decisión 2026-11-20: los hogares existentes parten con 60 días del plan Hogar.
+         Los que un administrador dejó en el plan superior lo conservan durante la prueba. -->
+    <changeSet id="029-4-existing-households-trial" author="vas-manuel">
+        <sql>
+            UPDATE households
+               SET plan_id = CASE WHEN plan_id = '33333333-3333-3333-3333-333333333333'
+                                  THEN plan_id
+                                  ELSE '22222222-2222-2222-2222-222222222222'::uuid END,
+                   subscription_status = 'TRIAL',
+                   subscription_ends_at = CURRENT_TIMESTAMP + INTERVAL '60 days';
+        </sql>
+        <rollback/>
+    </changeSet>
+
+</databaseChangeLog>
