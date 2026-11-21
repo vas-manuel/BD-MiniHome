@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+      Estadísticas propias del sitio promocional monihome.cl.
+      Un evento por página vista, tiempo activo, clic, demo vista o registro. No se guarda la IP:
+      solo el país, la región y la ciudad aproximados que se calculan con ella.
+    -->
+    <changeSet id="033-1-create-site-events" author="vas-manuel">
+        <createTable tableName="site_events">
+            <column name="id" type="BIGSERIAL"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <!-- pageview | engage | click | view | signup -->
+            <column name="type" type="VARCHAR(16)"><constraints nullable="false"/></column>
+            <column name="visitor_id" type="VARCHAR(32)"><constraints nullable="false"/></column>
+            <column name="session_id" type="VARCHAR(32)"/>
+            <column name="new_session" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="path" type="VARCHAR(300)"/>
+            <column name="title" type="VARCHAR(200)"/>
+            <column name="referrer" type="VARCHAR(500)"/>
+            <column name="referrer_host" type="VARCHAR(150)"/>
+            <!-- direct | search | social | referral | email | paid | campaign -->
+            <column name="channel" type="VARCHAR(20)"/>
+            <column name="utm_source" type="VARCHAR(100)"/>
+            <column name="utm_medium" type="VARCHAR(100)"/>
+            <column name="utm_campaign" type="VARCHAR(100)"/>
+            <column name="utm_content" type="VARCHAR(100)"/>
+            <column name="utm_term" type="VARCHAR(100)"/>
+            <column name="country" type="VARCHAR(2)"/>
+            <column name="region" type="VARCHAR(80)"/>
+            <column name="city" type="VARCHAR(100)"/>
+            <column name="device" type="VARCHAR(10)"/>
+            <column name="browser" type="VARCHAR(30)"/>
+            <column name="os" type="VARCHAR(30)"/>
+            <column name="lang" type="VARCHAR(20)"/>
+            <column name="screen_w" type="INTEGER"/>
+            <column name="duration_ms" type="INTEGER"/>
+            <column name="scroll_pct" type="SMALLINT"/>
+            <column name="name" type="VARCHAR(60)"/>
+            <column name="target" type="VARCHAR(60)"/>
+            <column name="household_id" type="UUID"/>
+        </createTable>
+        <createIndex tableName="site_events" indexName="idx_site_events_created">
+            <column name="created_at"/>
+        </createIndex>
+        <createIndex tableName="site_events" indexName="idx_site_events_type_created">
+            <column name="type"/>
+            <column name="created_at"/>
+        </createIndex>
+        <createIndex tableName="site_events" indexName="idx_site_events_visitor">
+            <column name="visitor_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

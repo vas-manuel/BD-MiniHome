@@ -38,5 +38,6 @@
   <include file="changelog/030-create-subscriptions-and-payments.xml"/>
   <include file="changelog/031-create-notifications-sent.xml"/>
   <include file="changelog/032-admin-grants-and-finance-settings.xml"/>
+  <include file="changelog/033-create-site-events.xml"/>
 
 </databaseChangeLog>
