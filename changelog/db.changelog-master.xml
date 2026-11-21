@@ -36,5 +36,6 @@
   <include file="changelog/028-add-budget-to-expense-categories.xml"/>
   <include file="changelog/029-plans-limits-and-ai-usage.xml"/>
   <include file="changelog/030-create-subscriptions-and-payments.xml"/>
+  <include file="changelog/031-create-notifications-sent.xml"/>
 
 </databaseChangeLog>

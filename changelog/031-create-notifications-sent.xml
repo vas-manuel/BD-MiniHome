@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+      Avisos del plan enviados por correo (specs/004-planes-y-pagos, paso 7).
+      ref_key identifica el hecho avisado (por ejemplo "payment:<id>" o "trial_ending:2026-12-01"):
+      la restricción única evita mandar dos veces el mismo aviso al mismo hogar.
+    -->
+    <changeSet id="031-1-create-notifications-sent" author="vas-manuel">
+        <createTable tableName="notifications_sent">
+            <column name="id" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="household_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_notifications_sent_household" references="households(id)" deleteCascade="true"/>
+            </column>
+            <column name="kind" type="VARCHAR(40)"><constraints nullable="false"/></column>
+            <column name="ref_key" type="VARCHAR(150)"><constraints nullable="false"/></column>
+            <column name="recipients" type="VARCHAR(500)"/>
+            <column name="sent_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="notifications_sent" columnNames="household_id, ref_key" constraintName="uq_notifications_sent_household_ref"/>
+    </changeSet>
+
+</databaseChangeLog>
