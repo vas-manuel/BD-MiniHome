@@ -37,5 +37,6 @@
   <include file="changelog/029-plans-limits-and-ai-usage.xml"/>
   <include file="changelog/030-create-subscriptions-and-payments.xml"/>
   <include file="changelog/031-create-notifications-sent.xml"/>
+  <include file="changelog/032-admin-grants-and-finance-settings.xml"/>
 
 </databaseChangeLog>

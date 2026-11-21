@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+      Panel de administración (specs/004-planes-y-pagos):
+      - motivo de cada cambio de plan (pago, cortesía del administrador, retiro de cortesía),
+      - fecha de cancelación de las suscripciones (para medir bajas por mes),
+      - parámetros del reporte financiero (comisiones, IVA, tipo de cambio, costos fijos).
+    -->
+    <changeSet id="032-1-plan-history-reason" author="vas-manuel">
+        <addColumn tableName="household_plan_history">
+            <!-- PAYMENT | GRANT_OWN_USE | GRANT_COMPENSATION | GRANT_SUPPORT | GRANT_OTHER | ADMIN_REVOKE | ADMIN (asignación manual antigua) -->
+            <column name="reason" type="VARCHAR(30)"/>
+            <column name="note" type="VARCHAR(300)"/>
+        </addColumn>
+        <sql>UPDATE household_plan_history SET reason = CASE WHEN changed_by IS NULL THEN 'PAYMENT' ELSE 'ADMIN' END WHERE reason IS NULL</sql>
+    </changeSet>
+
+    <changeSet id="032-2-subscriptions-canceled-at" author="vas-manuel">
+        <addColumn tableName="subscriptions">
+            <column name="canceled_at" type="TIMESTAMP"/>
+        </addColumn>
+        <sql>UPDATE subscriptions SET canceled_at = updated_at WHERE canceled_at IS NULL AND (status = 'CANCELED' OR cancel_at_period_end)</sql>
+    </changeSet>
+
+    <changeSet id="032-3-create-admin-settings" author="vas-manuel">
+        <createTable tableName="admin_settings">
+            <column name="key" type="VARCHAR(60)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="value" type="JSONB"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="updated_by" type="UUID"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
