@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+       http://www.liquibase.org/xml/ns/dbchangelog
+       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+      Teléfonos (APP Android/iOS) que reciben notificaciones push de vencimientos.
+      token = Expo push token ("ExponentPushToken[...]"), único: si otra persona inicia sesión en el
+      mismo teléfono, el token pasa a esa persona. Los avisos enviados se registran en notifications_sent
+      (ref_key "push-due:<tipo>:<monto>:<fecha>") para no repetirlos.
+      (El número 033 lo usa la rama 005-sitio-web.)
+    -->
+    <changeSet id="034-1-create-push-devices" author="vas-manuel">
+        <createTable tableName="push_devices">
+            <column name="id" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_push_devices_user" references="users(id)" deleteCascade="true"/>
+            </column>
+            <column name="token" type="VARCHAR(255)"><constraints nullable="false" unique="true" uniqueConstraintName="uq_push_devices_token"/></column>
+            <column name="platform" type="VARCHAR(10)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="last_seen_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="push_devices" indexName="idx_push_devices_user">
+            <column name="user_id"/>
+        </createIndex>
+        <sql>ALTER TABLE push_devices ADD CONSTRAINT chk_push_devices_platform CHECK (platform IN ('android', 'ios'))</sql>
+        <rollback>
+            <dropTable tableName="push_devices"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
